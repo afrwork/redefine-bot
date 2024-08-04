@@ -1,5 +1,6 @@
 import json
 from flask import Flask, render_template, request, jsonify
+from werkzeug.utils import quote as url_quote
 
 app = Flask(__name__, static_folder='static')
 
@@ -80,8 +81,6 @@ def submit_training():
         return jsonify({"status": "success", "message": "Training data submitted successfully."})
     
     return jsonify({"status": "error", "message": "Invalid input."})
-    
-from werkzeug.utils import quote as url_quote
 
 @app.route('/some_route')
 def some_route():
