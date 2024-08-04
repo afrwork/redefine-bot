@@ -80,6 +80,13 @@ def submit_training():
         return jsonify({"status": "success", "message": "Training data submitted successfully."})
     
     return jsonify({"status": "error", "message": "Invalid input."})
+    
+from werkzeug.utils import quote as url_quote
+
+@app.route('/some_route')
+def some_route():
+    quoted_url = url_quote("https://example.com")
+    return quoted_url
 
 if __name__ == "__main__":
     print("Welcome to the simple chatbot!")
