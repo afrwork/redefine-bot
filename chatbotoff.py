@@ -57,7 +57,6 @@ def send_message():
 
     return jsonify(response)
 
-
 @app.route('/submit_training', methods=['POST'])
 def submit_training():
     user_input = request.form.get('user_input')
@@ -82,10 +81,8 @@ def submit_training():
     
     return jsonify({"status": "error", "message": "Invalid input."})
 
-
 if __name__ == "__main__":
     print("Welcome to the simple chatbot!")
     training_data_file = "training_data.json"  # Update with your JSON file
     train_chatbot(training_data_file)
-
-    app.run(debug=True, host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5000)
