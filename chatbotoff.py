@@ -1,6 +1,6 @@
 import json
 from flask import Flask, render_template, request, jsonify
-from werkzeug.utils import quote as url_quote
+from urllib.parse import quote as url_quote
 
 app = Flask(__name__, static_folder='static')
 
