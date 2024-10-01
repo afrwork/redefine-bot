@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Optimus GPT</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-
 </head>
 <body>
     <div class="chat-container">
@@ -18,10 +17,78 @@
         <div class="user-input">
             <input type="text" id="user-input" placeholder="Type your message...">
             <button id="send-button">Send</button>
-
+        </div>
+        
+        <div class="training-input" id="training" style="display: none;">
+            <h2>Train the Bot</h2>
+            <input type="text" id="training-input" placeholder="Your question..." required>
+            <input type="text" id="training-response" placeholder="Bot's answer..." required>
+            <button id="submit-training">Submit Training</button>
+            <p style="color: red; display: none;" id="training-alert">Please ensure both fields are filled before submitting.</p>
         </div>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        document.getElementById('send-button').addEventListener('click', function() {
+            let userInput = document.getElementById('user-input').value.trim();
+            if (userInput === '') {
+                alert('Please enter a message before sending.');
+                return;
+            }
+
+            fetch('/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_input: userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                let chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+                chatBox.innerHTML += `<p><strong>Bot:</strong> ${data.bot_response}</p>`;
+
+                if (data.train) {
+                    document.getElementById('training').style.display = 'block'; // Show training fields
+                    document.getElementById('training-input').value = userInput; // Populate training input
+                    document.getElementById('training-response').focus(); // Focus on response input
+                } else {
+                    document.getElementById('training').style.display = 'none'; // Hide if bot understands
+                }
+
+                document.getElementById('user-input').value = ''; // Clear input
+                chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
+            });
+        });
+
+        document.getElementById('submit-training').addEventListener('click', function() {
+            let userInput = document.getElementById('training-input').value.trim();
+            let userResponse = document.getElementById('training-response').value.trim();
+
+            if (userInput === '' || userResponse === '') {
+                document.getElementById('training-alert').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('training-alert').style.display = 'none';
+            }
+
+            fetch('/submit_training', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_input: userInput, user_response: userResponse })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                document.getElementById('training-input').value = ''; // Clear training input
+                document.getElementById('training-response').value = ''; // Clear training response
+                document.getElementById('training').style.display = 'none'; // Hide training section
+            });
+        });
+    </script>
 </body>
 </html>
