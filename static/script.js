@@ -11,18 +11,18 @@ function sendMessage() {
     fetch("/send_message", {
         method: "POST",
         headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/json", // Changed to JSON for better structure
         },
-        body: `user_input=${userInput}&user_response=`,
+        body: JSON.stringify({ user_input: userInput }),
     })
     .then(response => response.json())
     .then(data => {
         // Display bot response
         displayMessage("bot", data.bot_response);
 
-        // If training is needed, show an alert
+        // If training is needed, show the training prompt
         if (data.train) {
-            askForTraining();
+            promptForTraining(userInput);
         }
 
         // Clear user input
@@ -59,35 +59,27 @@ function displayMessage(sender, message) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-
-function promptForTraining() {
-    var userResponse = confirm("I'm sorry, I don't understand that. Would you like to teach me with the correct response?");
-    if (userResponse) {
-        getCorrectAnswer();
-    }
-}
-
-function getCorrectAnswer() {
-    var correctAnswer = prompt("Please provide the correct response:");
+function promptForTraining(userInput) {
+    // Ask for the correct response
+    var correctAnswer = prompt(`I'm sorry, I don't understand "${userInput}". Please provide the correct response:`);
     if (correctAnswer) {
-        // Send the correct answer to the server for training
-        sendTrainingData(correctAnswer);
+        sendTrainingData(userInput, correctAnswer); // Send both the unknown input and the correct answer
     }
 }
 
-function sendTrainingData(correctAnswer) {
-    // Send the correct answer to the server for training
-    fetch("/send_message", {
+function sendTrainingData(userInput, correctAnswer) {
+    // Send the training data to the server
+    fetch("/submit_training", {
         method: "POST",
         headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/json", // Changed to JSON for better structure
         },
-        body: `user_input=&user_response=${correctAnswer}`,
+        body: JSON.stringify({ user_input: userInput, user_response: correctAnswer }),
     })
     .then(response => response.json())
     .then(data => {
         // Display the training result or any other response from the server
-        displayMessage("bot", data.bot_response);
+        displayMessage("bot", data.message || "Training data submitted successfully.");
     })
     .catch(error => {
         console.error("Error sending training data:", error);
