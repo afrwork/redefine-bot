@@ -1,18 +1,23 @@
 import json
+import logging
 from flask import Flask, render_template, request, jsonify
 from urllib.parse import quote as url_quote
+import random
 
 app = Flask(__name__, static_folder='static')
 
 EXIT_COMMAND = 'exit'
 TRAINING_FILE = "training_data.json"
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 def load_json(file_path):
     try:
         with open(file_path) as file:
             return json.load(file)
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"Error: {e}")
+        logging.error(f"Error loading {file_path}: {e}")
         return []
 
 def save_json(file_path, data):
@@ -20,7 +25,7 @@ def save_json(file_path, data):
         with open(file_path, "w") as file:
             json.dump(data, file, indent=4)
     except IOError as e:
-        print(f"Error writing to {file_path}: {e}")
+        logging.error(f"Error writing to {file_path}: {e}")
 
 def train_chatbot(training_data_file):
     new_training_data = load_json(training_data_file)
@@ -31,17 +36,21 @@ def train_chatbot(training_data_file):
     combined_training_data = list(combined_training_data.values())
     
     save_json(TRAINING_FILE, combined_training_data)
-
-    print("Chatbot training complete.")
+    logging.info("Chatbot training complete.")
 
 def load_training_data():
     return load_json(TRAINING_FILE)
 
 def simple_chatbot(user_input, training_data):
-    for data in training_data:
-        if data["input"].lower() in user_input.lower():
-            return {"bot_response": data["response"], "train": False}
-    return {"bot_response": "I'm sorry, I don't understand that.", "train": True}
+    responses = [data["response"] for data in training_data if data["input"].lower() in user_input.lower()]
+
+    if responses:
+        return {"bot_response": random.choice(responses), "train": False}
+
+    return {
+        "bot_response": "I'm sorry, I don't understand that. Would you like to train me with the correct response?",
+        "train": True
+    }
 
 @app.route('/')
 def index():
@@ -49,19 +58,17 @@ def index():
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
-    user_input = request.form.get('user_input')
+    user_input = request.json.get('user_input')
     training_data = load_training_data()
     response = simple_chatbot(user_input, training_data)
     
-    if response["train"]:
-        response["bot_response"] += " Would you like to train me with the correct response?"
-
     return jsonify(response)
 
 @app.route('/submit_training', methods=['POST'])
 def submit_training():
-    user_input = request.form.get('user_input')
-    user_response = request.form.get('user_response')
+    data = request.json
+    user_input = data.get('user_input')
+    user_response = data.get('user_response')
 
     if user_input and user_response:
         new_data = {
@@ -88,7 +95,7 @@ def some_route():
     return quoted_url
 
 if __name__ == "__main__":
-    print("Welcome to the simple chatbot!")
-    training_data_file = "training_data.json"  # Update with your JSON file
+    logging.info("Welcome to the simple chatbot!")
+    training_data_file = "training_data.json"
     train_chatbot(training_data_file)
     app.run(host='0.0.0.0', port=5000)
